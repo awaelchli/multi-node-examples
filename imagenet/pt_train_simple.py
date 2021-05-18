@@ -144,7 +144,7 @@ def main_worker(gpu, args):
     model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[gpu])
 
     # define loss function (criterion) and optimizer
-    criterion = nn.CrossEntropyLoss().cuda(args.gpu)
+    criterion = nn.CrossEntropyLoss().cuda(gpu)
 
     optimizer = torch.optim.SGD(
         model.parameters(),
@@ -250,8 +250,8 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         # measure data loading time
         data_time.update(time.time() - end)
 
-        images = images.cuda(args.gpu, non_blocking=True)
-        target = target.cuda(args.gpu, non_blocking=True)
+        images = images.cuda(args.local_rank, non_blocking=True)
+        target = target.cuda(args.local_rank, non_blocking=True)
 
         # compute output
         output = model(images)
@@ -291,8 +291,8 @@ def validate(val_loader, model, criterion, args):
     with torch.no_grad():
         end = time.time()
         for i, (images, target) in enumerate(val_loader):
-            images = images.cuda(args.gpu, non_blocking=True)
-            target = target.cuda(args.gpu, non_blocking=True)
+            images = images.cuda(args.local_rank, non_blocking=True)
+            target = target.cuda(args.local_rank, non_blocking=True)
 
             # compute output
             output = model(images)
