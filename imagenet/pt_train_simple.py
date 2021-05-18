@@ -255,11 +255,11 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
     losses = AverageMeter("Loss", ":.4e")
     top1 = AverageMeter("Acc@1", ":6.2f")
     top5 = AverageMeter("Acc@5", ":6.2f")
-    # progress = ProgressMeter(
-    #     len(train_loader),
-    #     [batch_time, data_time, losses, top1, top5],
-    #     prefix="Epoch: [{}]".format(epoch),
-    # )
+    progress = ProgressMeter(
+        len(train_loader),
+        [batch_time, data_time, losses, top1, top5],
+        prefix="Epoch: [{}]".format(epoch),
+    )
 
     # switch to train mode
     model.train()
@@ -267,8 +267,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
 
     end = time.time()
     for i, (images, target) in enumerate(train_loader):
-        torch.distributed.barrier()
-        print(i)
+
         # measure data loading time
         data_time.update(time.time() - end)
 
@@ -295,8 +294,8 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         batch_time.update(time.time() - end)
         end = time.time()
 
-        # if i % 10 == 0:
-        #     progress.display(i)
+        if i % 10 == 0:
+            progress.display(i)
 
 
 def validate(val_loader, model, criterion, args):
@@ -314,8 +313,8 @@ def validate(val_loader, model, criterion, args):
     with torch.no_grad():
         end = time.time()
         for i, (images, target) in enumerate(val_loader):
-            images = images.cuda(args.local_rank, non_blocking=True)
-            target = target.cuda(args.local_rank, non_blocking=True)
+            images = images.to(args.local_rank)
+            target = target.to(args.local_rank)
 
             # compute output
             output = model(images)
