@@ -77,11 +77,12 @@ parser.add_argument(
 parser.add_argument(
     "--node_rank", default=0, type=int, help="node rank for distributed training"
 )
+parser.add_argument("--gpus", default=-1, type=int, help="number of gpus per node")
 parser.add_argument(
-    "--gpus", default=-1, type=int, help="number of gpus per node"
-)
-parser.add_argument(
-    "--fake-data", default=False, action="store_true", help="simulate fake data instead of using ImageNet"
+    "--fake-data",
+    default=False,
+    action="store_true",
+    help="simulate fake data instead of using ImageNet",
 )
 
 best_acc1 = 0
@@ -104,7 +105,7 @@ def main():
     args.gpus = torch.cuda.device_count() if args.gpus == -1 else args.gpus
 
     # Use torch.multiprocessing.spawn to launch processes in each node
-    mp.spawn(main_worker, nprocs=args.gpus, args=(args, ))
+    mp.spawn(main_worker, nprocs=args.gpus, args=(args,))
 
 
 def main_worker(gpu, args):
@@ -126,7 +127,9 @@ def main_worker(gpu, args):
         rank=args.rank,
     )
 
-    print(f"RANK {args.rank}/{args.world_size}, LOCAL RANK {args.local_rank}/{args.gpus}")
+    print(
+        f"RANK {args.rank}/{args.world_size}, LOCAL RANK {args.local_rank}/{args.gpus}"
+    )
 
     # create model
     model = models.resnet18(pretrained=args.pretrained)
@@ -141,7 +144,9 @@ def main_worker(gpu, args):
     # ourselves based on the total number of GPUs we have
     args.batch_size = int(args.batch_size / args.gpus)
     args.workers = int((args.workers + args.gpus - 1) / args.gpus)
-    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank])
+    model = torch.nn.parallel.DistributedDataParallel(
+        model, device_ids=[args.local_rank]
+    )
 
     # define loss function (criterion) and optimizer
     criterion = nn.CrossEntropyLoss().cuda(args.local_rank)
@@ -175,17 +180,19 @@ def main_worker(gpu, args):
                 ]
             ),
         )
-        val_dataset = datasets.ImageFolder(
-            valdir,
-            transforms.Compose(
-                [
-                    transforms.Resize(256),
-                    transforms.CenterCrop(224),
-                    transforms.ToTensor(),
-                    normalize,
-                ]
+        val_dataset = (
+            datasets.ImageFolder(
+                valdir,
+                transforms.Compose(
+                    [
+                        transforms.Resize(256),
+                        transforms.CenterCrop(224),
+                        transforms.ToTensor(),
+                        normalize,
+                    ]
+                ),
             ),
-        ),
+        )
 
     train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
     train_loader = torch.utils.data.DataLoader(
@@ -370,12 +377,12 @@ class ProgressMeter(object):
 
 
 class FakeImageNetDataset(Dataset):
-
     def __len__(self):
         return 1e6
-    
+
     def __getitem__(self, item):
         return torch.rand(3, 224, 224)
+
 
 def adjust_learning_rate(optimizer, epoch, args):
     """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
