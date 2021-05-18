@@ -38,8 +38,7 @@ from argparse import ArgumentParser, Namespace
 
 import pytorch_lightning as pl
 
-from imagenet.lightning.model import ImageNetLightningModel
-
+from .model import ImageNetLightningModel
 from .data import ImageNetDataModule
 
 
