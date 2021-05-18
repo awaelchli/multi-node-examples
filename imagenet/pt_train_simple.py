@@ -127,8 +127,10 @@ def main():
     # For multiprocessing distributed, DistributedDataParallel constructor
     # should always set the single device scope, otherwise,
     # DistributedDataParallel will use all available devices.
-    torch.cuda.set_device(args.local_rank)
+    # torch.cuda.set_device(args.local_rank)
     model.cuda(args.local_rank)
+
+    print("model on device")
     # When using a single GPU per process and per
     # DistributedDataParallel, we need to divide the batch size
     # ourselves based on the total number of GPUs we have
