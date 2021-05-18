@@ -381,7 +381,9 @@ class FakeImageNetDataset(Dataset):
         return int(1e6)
 
     def __getitem__(self, item):
-        return torch.rand(3, 224, 224)
+        img = torch.rand(3, 224, 224)
+        label = torch.randint(1000, (1, ))
+        return img, label
 
 
 def adjust_learning_rate(optimizer, epoch, args):
