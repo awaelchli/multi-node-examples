@@ -100,7 +100,7 @@ def main():
     args.world_size = int(os.environ["WORLD_SIZE"])
     args.local_rank = int(os.environ["LOCAL_RANK"])
     args.node_rank = int(os.environ["NODE_RANK"])
-    args.global_rank = int(os.environ.get("RANK", args.node_rank * args.num_gpus + args.local_rank))
+    args.rank = int(os.environ.get("RANK", args.node_rank * args.num_gpus + args.local_rank))
 
     # For multiprocessing distributed training, rank needs to be the
     # global rank among all the processes
