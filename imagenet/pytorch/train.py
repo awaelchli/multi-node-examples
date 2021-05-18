@@ -111,8 +111,7 @@ def main():
         os.environ.get("RANK", args.node_rank * args.num_gpus + args.local_rank)
     )
 
-    # For multiprocessing distributed training, rank needs to be the
-    # global rank among all the processes
+    print("Initializing process group. Waiting for all processes to join ...")
     dist.init_process_group(
         backend="nccl",
         init_method="env://",
