@@ -33,7 +33,7 @@ or show all options you can change:
     python imagenet.py --help
 
 """
-import os
+
 from argparse import ArgumentParser, Namespace
 
 import pytorch_lightning as pl
@@ -44,40 +44,20 @@ import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 import torch.utils.data
 import torch.utils.data.distributed
-import torchvision.datasets as datasets
 import torchvision.models as models
-import torchvision.transforms as transforms
-from pl_examples import cli_lightning_logo
+
+from .data import ImageNetDataModule
 from pytorch_lightning.core import LightningModule
 
 
 class ImageNetLightningModel(LightningModule):
-    """
-    >>> ImageNetLightningModel(data_path='missing')  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
-    ImageNetLightningModel(
-      (model): ResNet(...)
-    )
-    """
-
-    # pull out resnet names from torchvision models
-    MODEL_NAMES = sorted(
-        name
-        for name in models.__dict__
-        if name.islower()
-        and not name.startswith("__")
-        and callable(models.__dict__[name])
-    )
-
     def __init__(
         self,
-        data_path: str,
         arch: str = "resnet18",
         pretrained: bool = False,
         lr: float = 0.1,
         momentum: float = 0.9,
         weight_decay: float = 1e-4,
-        batch_size: int = 4,
-        workers: int = 2,
         **kwargs,
     ):
         super().__init__()
@@ -87,10 +67,7 @@ class ImageNetLightningModel(LightningModule):
         self.lr = lr
         self.momentum = momentum
         self.weight_decay = weight_decay
-        self.data_path = data_path
-        self.batch_size = batch_size
-        self.workers = workers
-        self.model = models.__dict__[self.arch](pretrained=self.pretrained)
+        self.model = models.resnet18(pretrained=self.pretrained)
 
     def forward(self, x):
         return self.model(x)
@@ -142,60 +119,6 @@ class ImageNetLightningModel(LightningModule):
         )
         scheduler = lr_scheduler.LambdaLR(optimizer, lambda epoch: 0.1 ** (epoch // 30))
         return [optimizer], [scheduler]
-
-    def train_dataloader(self):
-        normalize = transforms.Normalize(
-            mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225],
-        )
-
-        train_dir = os.path.join(self.data_path, "train")
-        train_dataset = datasets.ImageFolder(
-            train_dir,
-            transforms.Compose(
-                [
-                    transforms.RandomResizedCrop(224),
-                    transforms.RandomHorizontalFlip(),
-                    transforms.ToTensor(),
-                    normalize,
-                ]
-            ),
-        )
-
-        train_loader = torch.utils.data.DataLoader(
-            dataset=train_dataset,
-            batch_size=self.batch_size,
-            shuffle=True,
-            num_workers=self.workers,
-        )
-        return train_loader
-
-    def val_dataloader(self):
-        normalize = transforms.Normalize(
-            mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225],
-        )
-        val_dir = os.path.join(self.data_path, "val")
-        val_loader = torch.utils.data.DataLoader(
-            datasets.ImageFolder(
-                val_dir,
-                transforms.Compose(
-                    [
-                        transforms.Resize(256),
-                        transforms.CenterCrop(224),
-                        transforms.ToTensor(),
-                        normalize,
-                    ]
-                ),
-            ),
-            batch_size=self.batch_size,
-            shuffle=False,
-            num_workers=self.workers,
-        )
-        return val_loader
-
-    def test_dataloader(self):
-        return self.val_dataloader()
 
     def test_step(self, *args, **kwargs):
         return self.validation_step(*args, **kwargs)
@@ -287,12 +210,13 @@ def main(args: Namespace) -> None:
         args.workers = int(args.workers / max(1, args.gpus))
 
     model = ImageNetLightningModel(**vars(args))
+    datamodule = ImageNetDataModule(**vars(args))
     trainer = pl.Trainer.from_argparse_args(args)
 
     if args.evaluate:
-        trainer.test(model)
+        trainer.test(model, datamodule=datamodule)
     else:
-        trainer.fit(model)
+        trainer.fit(model, datamodule=datamodule)
 
 
 def run_cli():
@@ -313,8 +237,8 @@ def run_cli():
     )
     parser = ImageNetLightningModel.add_model_specific_args(parent_parser)
     parser.set_defaults(
+        accelerator="ddp",
         profiler="simple",
-        deterministic=True,
         max_epochs=90,
     )
     args = parser.parse_args()

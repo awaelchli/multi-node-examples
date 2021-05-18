@@ -44,15 +44,8 @@ import torchvision.transforms as transforms
 from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
-
-from utils import (
-    AverageMeter,
-    FakeImageNetDataset,
-    ProgressMeter,
-    accuracy,
-    adjust_learning_rate,
-    save_checkpoint,
-)
+from utils import (AverageMeter, FakeImageNetDataset, ProgressMeter, accuracy,
+                   adjust_learning_rate, save_checkpoint)
 
 parser = argparse.ArgumentParser(description="PyTorch ImageNet Training")
 parser.add_argument("--data", default=".", metavar="DIR", help="path to dataset")
