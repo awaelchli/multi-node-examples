@@ -108,8 +108,10 @@ def main_worker(gpu, args):
     global best_acc1
     print(f"Use GPU: {gpu} for training")
 
-    os.environ["LOCAL_RANK"] = args.local_rank = str(gpu)
-    os.environ["RANK"] = args.rank = args.node_rank * args.gpus + gpu
+    args.local_rank = str(gpu)
+    args.rank = args.node_rank * args.gpus + gpu
+    os.environ["LOCAL_RANK"] = str(args.local_rank)
+    os.environ["RANK"] = str(args.rank)
 
     # For multiprocessing distributed training, rank needs to be the
     # global rank among all the processes
