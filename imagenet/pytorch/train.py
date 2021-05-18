@@ -107,9 +107,6 @@ parser.add_argument(
     "--pretrained", dest="pretrained", action="store_true", help="use pre-trained model"
 )
 parser.add_argument(
-    "--num-gpus", required=True, type=int, help="number of gpus per node"
-)
-parser.add_argument(
     "--fake-data",
     default=False,
     action="store_true",
@@ -126,7 +123,6 @@ def main():
 
     os.environ.setdefault("MASTER_ADDR", "127.0.0.1")
     os.environ.setdefault("MASTER_PORT", "23456")
-    os.environ.setdefault("WORLD_SIZE", str(args.num_gpus))
     os.environ.setdefault("NODE_RANK", "0")
 
     args.world_size = int(os.environ["WORLD_SIZE"])
@@ -143,7 +139,7 @@ def main():
     print(
         f"Using GPU {args.local_rank}, "
         f"GLOBAL RANK {args.global_rank}/{args.world_size}, "
-        f"LOCAL RANK {args.local_rank}/{args.num_gpus}"
+        f"LOCAL RANK {args.local_rank}"
     )
 
     # create model
@@ -158,8 +154,8 @@ def main():
     # When using a single GPU per process and per
     # DistributedDataParallel, we need to divide the batch size
     # ourselves based on the total number of GPUs we have
-    args.batch_size = int(args.batch_size / args.num_gpus)
-    args.workers = int((args.workers + args.num_gpus - 1) / args.num_gpus)
+    args.batch_size = int(args.batch_size / args.world_size)
+    args.workers = int((args.workers + args.world_size - 1) / args.world_size)
     model = DistributedDataParallel(model, device_ids=[args.local_rank])
 
     # define loss function (criterion) and optimizer
