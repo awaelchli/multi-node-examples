@@ -5,7 +5,7 @@ https://github.com/pytorch/examples/blob/master/imagenet/main.py
 Example usage:
 
 # Launch on one node two processes
-python -m torch.distributed.launch --nnodes 1  --nproc_per_node 2 --master_addr 127.0.0.1 --master_port 1234  --use_env pt_train_simple.py --num-gpus 2 --fake-data
+python -m torch.distributed.launch --nnodes 1  --nproc_per_node 2 --master_addr 127.0.0.1 --master_port 1234  --use_env train.py --num-gpus 2 --fake-data
 
 """
 
