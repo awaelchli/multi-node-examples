@@ -127,10 +127,8 @@ def main():
     # For multiprocessing distributed, DistributedDataParallel constructor
     # should always set the single device scope, otherwise,
     # DistributedDataParallel will use all available devices.
-    # torch.cuda.set_device(args.local_rank)
-    print("barrier")
-    torch.distributed.barrier()
-    print("after barrier")
+    torch.cuda.set_device(args.local_rank)
+
     model.to(torch.device("cuda", args.local_rank))
     # model.cuda(args.local_rank)
 
