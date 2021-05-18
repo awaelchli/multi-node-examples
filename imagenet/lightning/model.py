@@ -137,4 +137,10 @@ class ImageNetLightningModel(LightningModule):
             action="store_true",
             help="use pre-trained model",
         )
+        parser.add_argument(
+            "--fake-data",
+            default=False,
+            action="store_true",
+            help="simulate fake data instead of using ImageNet",
+        )
         return parent_parser
