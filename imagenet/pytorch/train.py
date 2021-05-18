@@ -2,9 +2,25 @@
 Adapted from PyTorch official examples at
 https://github.com/pytorch/examples/blob/master/imagenet/main.py
 
-Example usage:
+Example:
+Launching processes by hand on two nodes, two processes each:
 
-# Launch on one node two processes
+# first process, first node
+WORLD_SIZE=4 RANK=0 NODE_RANK=0 LOCAL_RANK=0 MASTER_ADDR=node01.cluster MASTER_PORT=1234 python train.py --num-gpus 2 --fake-data
+
+# second process, first node
+WORLD_SIZE=4 RANK=1 NODE_RANK=0 LOCAL_RANK=1 MASTER_ADDR=node01.cluster MASTER_PORT=1238 python train.py --num-gpus 2 --fake-data
+
+# third process, second node
+WORLD_SIZE=4 RANK=2 NODE_RANK=1 LOCAL_RANK=0 MASTER_ADDR=node01.cluster MASTER_PORT=1238 python train.py --num-gpus 2 --fake-data
+
+# fourth process, second node
+WORLD_SIZE=4 RANK=3 NODE_RANK=1 LOCAL_RANK=1 MASTER_ADDR=node01.cluster MASTER_PORT=1238 python train.py --num-gpus 2 --fake-data
+
+
+Example:
+Single node, two GPUs, launch with torch.distributed.launch:
+
 python -m torch.distributed.launch --nnodes 1  --nproc_per_node 2 --master_addr 127.0.0.1 --master_port 1234  --use_env train.py --num-gpus 2 --fake-data
 
 """
