@@ -85,8 +85,6 @@ parser.add_argument(
     help="simulate fake data instead of using ImageNet",
 )
 
-best_acc1 = 0
-
 
 def main():
     args = parser.parse_args()
@@ -184,7 +182,7 @@ def main():
             ),
         )
 
-    train_sampler = DistributedSampler(train_dataset, num_replicas=args.world_size, rank=args.rank)
+    train_sampler = DistributedSampler(train_dataset)
     train_loader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,
@@ -205,15 +203,16 @@ def main():
         validate(val_loader, model, criterion, args)
         return
 
+    best_acc1 = 0
     for epoch in range(args.epochs):
         train_sampler.set_epoch(epoch)
         adjust_learning_rate(optimizer, epoch, args)
 
         # train for one epoch
-        train(train_loader, model, criterion, optimizer, epoch, args)
+        train(train_loader, model, criterion, optimizer, epoch, device, args)
 
         # evaluate on validation set
-        acc1 = validate(val_loader, model, criterion, args)
+        acc1 = validate(val_loader, model, criterion, device, args)
 
         # remember best acc@1 and save checkpoint
         is_best = acc1 > best_acc1
@@ -231,7 +230,7 @@ def main():
             )
 
 
-def train(train_loader, model, criterion, optimizer, epoch, args):
+def train(train_loader, model, criterion, optimizer, epoch, device, args):
     batch_time = AverageMeter("Time", ":6.3f")
     data_time = AverageMeter("Data", ":6.3f")
     losses = AverageMeter("Loss", ":.4e")
@@ -245,7 +244,6 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
 
     # switch to train mode
     model.train()
-    device = torch.device("cuda", args.local_rank)
 
     end = time.time()
     for i, (images, target) in enumerate(train_loader):
@@ -280,7 +278,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
             progress.display(i)
 
 
-def validate(val_loader, model, criterion, args):
+def validate(val_loader, model, criterion, device, args):
     batch_time = AverageMeter("Time", ":6.3f")
     losses = AverageMeter("Loss", ":.4e")
     top1 = AverageMeter("Acc@1", ":6.2f")
@@ -295,8 +293,8 @@ def validate(val_loader, model, criterion, args):
     with torch.no_grad():
         end = time.time()
         for i, (images, target) in enumerate(val_loader):
-            images = images.to(args.local_rank)
-            target = target.to(args.local_rank)
+            images = images.to(device)
+            target = target.to(device)
 
             # compute output
             output = model(images)
