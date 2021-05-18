@@ -208,6 +208,7 @@ def main():
         return
 
     for epoch in range(args.epochs):
+        print("epoch", epoch)
         train_sampler.set_epoch(epoch)
         adjust_learning_rate(optimizer, epoch, args)
 
