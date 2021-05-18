@@ -126,6 +126,8 @@ def main_worker(gpu, args):
         rank=args.rank,
     )
 
+    print(f"RANK {args.rank}/{args.world_size}, LOCAL RANK {args.local_rank}/{args.gpus}")
+
     # create model
     model = models.resnet18(pretrained=args.pretrained)
 
