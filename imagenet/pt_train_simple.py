@@ -20,7 +20,7 @@ import torch.utils.data.distributed
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
-
+from torch.utils.data import Dataset
 
 parser = argparse.ArgumentParser(description="PyTorch ImageNet Training")
 parser.add_argument("--data", default=".", metavar="DIR", help="path to dataset")
@@ -155,23 +155,38 @@ def main_worker(gpu, args):
     cudnn.benchmark = True
 
     # Data loading code
-    traindir = os.path.join(args.data, "train")
-    valdir = os.path.join(args.data, "val")
-    normalize = transforms.Normalize(
-        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-    )
-
-    train_dataset = datasets.ImageFolder(
-        traindir,
-        transforms.Compose(
-            [
-                transforms.RandomResizedCrop(224),
-                transforms.RandomHorizontalFlip(),
-                transforms.ToTensor(),
-                normalize,
-            ]
+    if args.fake_data:
+        train_dataset = FakeImageNetDataset()
+        val_dataset = FakeImageNetDataset()
+    else:
+        traindir = os.path.join(args.data, "train")
+        valdir = os.path.join(args.data, "val")
+        normalize = transforms.Normalize(
+            mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+        )
+        train_dataset = datasets.ImageFolder(
+            traindir,
+            transforms.Compose(
+                [
+                    transforms.RandomResizedCrop(224),
+                    transforms.RandomHorizontalFlip(),
+                    transforms.ToTensor(),
+                    normalize,
+                ]
+            ),
+        )
+        val_dataset = datasets.ImageFolder(
+            valdir,
+            transforms.Compose(
+                [
+                    transforms.Resize(256),
+                    transforms.CenterCrop(224),
+                    transforms.ToTensor(),
+                    normalize,
+                ]
+            ),
         ),
-    )
+
     train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
@@ -183,17 +198,7 @@ def main_worker(gpu, args):
     )
 
     val_loader = torch.utils.data.DataLoader(
-        datasets.ImageFolder(
-            valdir,
-            transforms.Compose(
-                [
-                    transforms.Resize(256),
-                    transforms.CenterCrop(224),
-                    transforms.ToTensor(),
-                    normalize,
-                ]
-            ),
-        ),
+        val_dataset,
         batch_size=args.batch_size,
         shuffle=False,
         num_workers=args.workers,
@@ -363,6 +368,14 @@ class ProgressMeter(object):
         fmt = "{:" + str(num_digits) + "d}"
         return "[" + fmt + "/" + fmt.format(num_batches) + "]"
 
+
+class FakeImageNetDataset(Dataset):
+
+    def __len__(self):
+        return 1e6
+    
+    def __getitem__(self, item):
+        return torch.rand(3, 224, 224)
 
 def adjust_learning_rate(optimizer, epoch, args):
     """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
