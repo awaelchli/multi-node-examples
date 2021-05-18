@@ -122,17 +122,13 @@ def main():
     # create model
     model = models.resnet18(pretrained=args.pretrained)
 
-    print("model weights downloaded")
-
     # For multiprocessing distributed, DistributedDataParallel constructor
     # should always set the single device scope, otherwise,
     # DistributedDataParallel will use all available devices.
-    torch.cuda.set_device(args.local_rank)
+    device = torch.device("cuda", args.local_rank)
+    torch.cuda.set_device(device)
+    model.to(device)
 
-    model.to(torch.device("cuda", args.local_rank))
-    # model.cuda(args.local_rank)
-
-    print("model on device")
     # When using a single GPU per process and per
     # DistributedDataParallel, we need to divide the batch size
     # ourselves based on the total number of GPUs we have
@@ -141,8 +137,6 @@ def main():
     model = torch.nn.parallel.DistributedDataParallel(
         model, device_ids=[args.local_rank]
     )
-
-    print("model initialized")
 
     # define loss function (criterion) and optimizer
     criterion = nn.CrossEntropyLoss()
@@ -155,11 +149,8 @@ def main():
     )
     cudnn.benchmark = True
 
-    print("optimizer initialized")
-
     # Data loading code
     if args.fake_data:
-        print("using fake data")
         train_dataset = FakeImageNetDataset()
         val_dataset = FakeImageNetDataset()
     else:
@@ -193,8 +184,6 @@ def main():
             ),
         )
 
-    print("setting up distrib sampler")
-
     train_sampler = DistributedSampler(train_dataset, num_replicas=args.world_size, rank=args.rank)
     train_loader = DataLoader(
         train_dataset,
@@ -211,22 +200,18 @@ def main():
         num_workers=args.workers,
         pin_memory=True,
     )
-    print("dataloaders initialized")
 
     if args.evaluate:
         validate(val_loader, model, criterion, args)
         return
 
     for epoch in range(args.epochs):
-        print("epoch", epoch)
         train_sampler.set_epoch(epoch)
         adjust_learning_rate(optimizer, epoch, args)
 
         # train for one epoch
-        print("train")
         train(train_loader, model, criterion, optimizer, epoch, args)
 
-        print("validate")
         # evaluate on validation set
         acc1 = validate(val_loader, model, criterion, args)
 
@@ -235,7 +220,6 @@ def main():
         best_acc1 = max(acc1, best_acc1)
 
         if args.rank == 0:
-            print("checkpoint")
             save_checkpoint(
                 {
                     "epoch": epoch + 1,
