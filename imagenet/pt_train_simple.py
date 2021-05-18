@@ -147,7 +147,7 @@ def main():
     print("model initialized")
 
     # define loss function (criterion) and optimizer
-    criterion = nn.CrossEntropyLoss().cuda(args.local_rank)
+    criterion = nn.CrossEntropyLoss()
 
     optimizer = torch.optim.SGD(
         model.parameters(),
@@ -197,7 +197,7 @@ def main():
 
     print("setting up distrib sampler")
 
-    train_sampler = DistributedSampler(train_dataset)
+    train_sampler = DistributedSampler(train_dataset, num_replicas=args.world_size, rank=args.rank)
     train_loader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,
