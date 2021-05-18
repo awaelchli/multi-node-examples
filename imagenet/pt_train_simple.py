@@ -81,9 +81,6 @@ parser.add_argument(
 parser.add_argument(
     "--pretrained", dest="pretrained", action="store_true", help="use pre-trained model"
 )
-parser.add_argument(
-    "--node_rank", default=0, type=int, help="node rank for distributed training"
-)
 parser.add_argument("--num-gpus", required=True, type=int, help="number of gpus per node")
 parser.add_argument(
     "--fake-data",
@@ -118,7 +115,7 @@ def main():
     )
 
     print(
-        f"Using GPU {args.local_rank},"
+        f"Using GPU {args.local_rank}, "
         f"GLOBAL RANK {args.rank}/{args.world_size}, "
         f"LOCAL RANK {args.local_rank}/{args.num_gpus}"
     )
