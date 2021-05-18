@@ -151,8 +151,11 @@ def main():
     )
     cudnn.benchmark = True
 
+    print("optimizer initialized")
+
     # Data loading code
     if args.fake_data:
+        print("using fake data")
         train_dataset = FakeImageNetDataset()
         val_dataset = FakeImageNetDataset()
     else:
@@ -185,6 +188,8 @@ def main():
                 ),
             ),
         )
+
+    print("setting up distrib sampler")
 
     train_sampler = DistributedSampler(train_dataset)
     train_loader = DataLoader(
