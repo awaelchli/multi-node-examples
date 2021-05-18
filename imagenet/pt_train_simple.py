@@ -1,5 +1,13 @@
-# Adapted from PyTorch official examples at
-# https://github.com/pytorch/examples/blob/master/imagenet/main.py
+"""
+Adapted from PyTorch official examples at
+https://github.com/pytorch/examples/blob/master/imagenet/main.py
+
+Example usage:
+
+# Launch on one node two processes
+python -m torch.distributed.launch --nnodes 1  --nproc_per_node 2 --master_addr 127.0.0.1 --master_port 1234  --use_env pt_train_simple.py --num-gpus 2 --fake-data
+
+"""
 
 import argparse
 import os
@@ -13,7 +21,6 @@ import torch.nn.parallel
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 import torch.optim
-import torch.multiprocessing as mp
 import torch.utils.data
 import torch.utils.data.distributed
 import torchvision.transforms as transforms
@@ -91,6 +98,7 @@ def main():
 
     random.seed(123)
     torch.manual_seed(123)
+    cudnn.benchmark = True
 
     os.environ.setdefault("MASTER_ADDR", "127.0.0.1")
     os.environ.setdefault("MASTER_PORT", "23456")
@@ -118,9 +126,8 @@ def main():
     # create model
     model = models.resnet18(pretrained=args.pretrained)
 
-    # For multiprocessing distributed, DistributedDataParallel constructor
-    # should always set the single device scope, otherwise,
-    # DistributedDataParallel will use all available devices.
+    # Set the current device. Memory will only be allocated on the selected device.
+    # DistributedDataParallel will use only this device.
     device = torch.device("cuda", args.local_rank)
     torch.cuda.set_device(device)
     model.to(device)
@@ -136,14 +143,12 @@ def main():
 
     # define loss function (criterion) and optimizer
     criterion = nn.CrossEntropyLoss()
-
     optimizer = torch.optim.SGD(
         model.parameters(),
         args.lr,
         momentum=args.momentum,
         weight_decay=args.weight_decay,
     )
-    cudnn.benchmark = True
 
     # Data loading code
     if args.fake_data:
