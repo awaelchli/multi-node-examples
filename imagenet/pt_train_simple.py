@@ -93,7 +93,7 @@ parser.add_argument(
     "--dist-backend", default="nccl", type=str, help="distributed backend"
 )
 parser.add_argument(
-    "--fake-data", default=True, type=bool, action="store_true", help="simulate fake data instead of using ImageNet"
+    "--fake-data", default=False, action="store_true", help="simulate fake data instead of using ImageNet"
 )
 
 best_acc1 = 0
