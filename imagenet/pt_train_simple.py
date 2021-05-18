@@ -378,7 +378,7 @@ class ProgressMeter(object):
 
 class FakeImageNetDataset(Dataset):
     def __len__(self):
-        return 1e6
+        return int(1e6)
 
     def __getitem__(self, item):
         return torch.rand(3, 224, 224)
