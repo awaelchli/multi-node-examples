@@ -93,10 +93,13 @@ def main():
     random.seed(123)
     torch.manual_seed(123)
 
-    args.master_addr = os.environ.get("MASTER_ADDR", "127.0.0.1")
-    args.master_port = int(os.environ.get("MASTER_PORT", "23456"))
-    args.world_size = int(os.environ.get("WORLD_SIZE", args.gpus))
-    args.node_rank = int(os.environ.get("NODE_RANK", 0))
+    os.environ.setdefault("MASTER_ADDR", "127.0.0.1")
+    os.environ.setdefault("MASTER_PORT", "23456")
+    os.environ.setdefault("WORLD_SIZE", str(args.gpus))
+    os.environ.setdefault("NODE_RANK", "0")
+
+    args.world_size = int(os.environ["WORLD_SIZE"])
+    args.node_rank = int(os.environ["NODE_RANK"])
 
     args.gpus = torch.cuda.device_count() if args.gpus == -1 else args.gpus
 
@@ -110,6 +113,7 @@ def main_worker(gpu, args):
 
     args.local_rank = str(gpu)
     args.rank = args.node_rank * args.gpus + gpu
+
     os.environ["LOCAL_RANK"] = str(args.local_rank)
     os.environ["RANK"] = str(args.rank)
 
