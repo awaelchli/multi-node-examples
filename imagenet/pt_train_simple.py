@@ -100,11 +100,7 @@ def main():
     args.world_size = int(os.environ["WORLD_SIZE"])
     args.local_rank = int(os.environ["LOCAL_RANK"])
     args.node_rank = int(os.environ["NODE_RANK"])
-
-    print(f"Use GPU: {args.local_rank} for training")
-
-    args.rank = args.node_rank * args.num_gpus + args.local_rank
-    os.environ["RANK"] = str(args.rank)
+    args.global_rank = int(os.environ.get("RANK", args.node_rank * args.num_gpus + args.local_rank))
 
     # For multiprocessing distributed training, rank needs to be the
     # global rank among all the processes
@@ -114,7 +110,9 @@ def main():
     )
 
     print(
-        f"RANK {args.rank}/{args.world_size}, LOCAL RANK {args.local_rank}/{args.num_gpus}"
+        f"Using GPU {args.local_rank},"
+        f"GLOBAL RANK {args.rank}/{args.world_size}, "
+        f"LOCAL RANK {args.local_rank}/{args.num_gpus}"
     )
 
     # create model
@@ -200,7 +198,7 @@ def main():
     )
 
     if args.evaluate:
-        validate(val_loader, model, criterion, args)
+        validate(val_loader, model, criterion, device, args)
         return
 
     best_acc1 = 0
@@ -266,7 +264,6 @@ def train(train_loader, model, criterion, optimizer, epoch, device, args):
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
-        print("backward")
         loss.backward()
         optimizer.step()
 
