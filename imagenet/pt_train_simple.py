@@ -225,8 +225,10 @@ def main():
         adjust_learning_rate(optimizer, epoch, args)
 
         # train for one epoch
+        print("train")
         train(train_loader, model, criterion, optimizer, epoch, args)
 
+        print("validate")
         # evaluate on validation set
         acc1 = validate(val_loader, model, criterion, args)
 
@@ -235,6 +237,7 @@ def main():
         best_acc1 = max(acc1, best_acc1)
 
         if args.rank == 0:
+            print("checkpoint")
             save_checkpoint(
                 {
                     "epoch": epoch + 1,
