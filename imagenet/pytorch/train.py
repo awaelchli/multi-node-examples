@@ -1,5 +1,29 @@
-# Adapted from PyTorch official examples at
-# https://github.com/pytorch/examples/blob/master/imagenet/main.py
+"""
+Adapted from PyTorch official examples at
+https://github.com/pytorch/examples/blob/master/imagenet/main.py
+
+Example:
+Launching processes by hand on two nodes, two processes each:
+
+# first process, first node
+WORLD_SIZE=4 RANK=0 NODE_RANK=0 LOCAL_RANK=0 MASTER_ADDR=node01.cluster MASTER_PORT=1234 python train.py --num-gpus 2 --fake-data
+
+# second process, first node
+WORLD_SIZE=4 RANK=1 NODE_RANK=0 LOCAL_RANK=1 MASTER_ADDR=node01.cluster MASTER_PORT=1238 python train.py --num-gpus 2 --fake-data
+
+# third process, second node
+WORLD_SIZE=4 RANK=2 NODE_RANK=1 LOCAL_RANK=0 MASTER_ADDR=node01.cluster MASTER_PORT=1238 python train.py --num-gpus 2 --fake-data
+
+# fourth process, second node
+WORLD_SIZE=4 RANK=3 NODE_RANK=1 LOCAL_RANK=1 MASTER_ADDR=node01.cluster MASTER_PORT=1238 python train.py --num-gpus 2 --fake-data
+
+
+Example:
+Single node, two GPUs, launch with torch.distributed.launch:
+
+python -m torch.distributed.launch --nnodes 1  --nproc_per_node 2 --master_addr 127.0.0.1 --master_port 1234  --use_env train.py --num-gpus 2 --fake-data
+
+"""
 
 import argparse
 import os
@@ -8,18 +32,17 @@ import shutil
 import time
 
 import torch
-import torch.nn as nn
-import torch.nn.parallel
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist
+import torch.nn as nn
+import torch.nn.parallel
 import torch.optim
-import torch.multiprocessing as mp
 import torch.utils.data
 import torch.utils.data.distributed
-import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
-from torch.utils.data import Dataset, DataLoader
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.distributed import DistributedSampler
 
 parser = argparse.ArgumentParser(description="PyTorch ImageNet Training")
@@ -75,9 +98,8 @@ parser.add_argument(
     "--pretrained", dest="pretrained", action="store_true", help="use pre-trained model"
 )
 parser.add_argument(
-    "--node_rank", default=0, type=int, help="node rank for distributed training"
+    "--num-gpus", required=True, type=int, help="number of gpus per node"
 )
-parser.add_argument("--gpus", default=-1, type=int, help="number of gpus per node")
 parser.add_argument(
     "--fake-data",
     default=False,
@@ -85,77 +107,64 @@ parser.add_argument(
     help="simulate fake data instead of using ImageNet",
 )
 
-best_acc1 = 0
-
 
 def main():
     args = parser.parse_args()
 
     random.seed(123)
     torch.manual_seed(123)
+    cudnn.benchmark = True
 
     os.environ.setdefault("MASTER_ADDR", "127.0.0.1")
     os.environ.setdefault("MASTER_PORT", "23456")
-    os.environ.setdefault("WORLD_SIZE", str(args.gpus))
+    os.environ.setdefault("WORLD_SIZE", str(args.num_gpus))
     os.environ.setdefault("NODE_RANK", "0")
 
     args.world_size = int(os.environ["WORLD_SIZE"])
+    args.local_rank = int(os.environ["LOCAL_RANK"])
     args.node_rank = int(os.environ["NODE_RANK"])
+    args.rank = int(
+        os.environ.get("RANK", args.node_rank * args.num_gpus + args.local_rank)
+    )
 
-    args.gpus = torch.cuda.device_count() if args.gpus == -1 else args.gpus
-
-    # Use torch.multiprocessing.spawn to launch processes in each node
-    mp.spawn(main_worker, nprocs=args.gpus, args=(args,))
-
-
-def main_worker(gpu, args):
-    global best_acc1
-    print(f"Use GPU: {gpu} for training")
-
-    args.local_rank = gpu
-    args.rank = args.node_rank * args.gpus + gpu
-
-    os.environ["LOCAL_RANK"] = str(args.local_rank)
-    os.environ["RANK"] = str(args.rank)
-
-    # For multiprocessing distributed training, rank needs to be the
-    # global rank among all the processes
+    print("Initializing process group. Waiting for all processes to join ...")
     dist.init_process_group(
         backend="nccl",
         init_method="env://",
     )
 
     print(
-        f"RANK {args.rank}/{args.world_size}, LOCAL RANK {args.local_rank}/{args.gpus}"
+        f"Using GPU {args.local_rank}, "
+        f"GLOBAL RANK {args.rank}/{args.world_size}, "
+        f"LOCAL RANK {args.local_rank}/{args.num_gpus}"
     )
 
     # create model
     model = models.resnet18(pretrained=args.pretrained)
 
-    # For multiprocessing distributed, DistributedDataParallel constructor
-    # should always set the single device scope, otherwise,
-    # DistributedDataParallel will use all available devices.
-    torch.cuda.set_device(args.local_rank)
-    model.cuda(args.local_rank)
+    # Set the current device. Memory will only be allocated on the selected device.
+    # DistributedDataParallel will use only this device.
+    device = torch.device("cuda", args.local_rank)
+    torch.cuda.set_device(device)
+    model.to(device)
+
     # When using a single GPU per process and per
     # DistributedDataParallel, we need to divide the batch size
     # ourselves based on the total number of GPUs we have
-    args.batch_size = int(args.batch_size / args.gpus)
-    args.workers = int((args.workers + args.gpus - 1) / args.gpus)
+    args.batch_size = int(args.batch_size / args.num_gpus)
+    args.workers = int((args.workers + args.num_gpus - 1) / args.num_gpus)
     model = torch.nn.parallel.DistributedDataParallel(
         model, device_ids=[args.local_rank]
     )
 
     # define loss function (criterion) and optimizer
-    criterion = nn.CrossEntropyLoss().cuda(args.local_rank)
-
+    criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(
         model.parameters(),
         args.lr,
         momentum=args.momentum,
         weight_decay=args.weight_decay,
     )
-    cudnn.benchmark = True
 
     # Data loading code
     if args.fake_data:
@@ -210,18 +219,19 @@ def main_worker(gpu, args):
     )
 
     if args.evaluate:
-        validate(val_loader, model, criterion, args)
+        validate(val_loader, model, criterion, device, args)
         return
 
+    best_acc1 = 0
     for epoch in range(args.epochs):
         train_sampler.set_epoch(epoch)
         adjust_learning_rate(optimizer, epoch, args)
 
         # train for one epoch
-        train(train_loader, model, criterion, optimizer, epoch, args)
+        train(train_loader, model, criterion, optimizer, epoch, device, args)
 
         # evaluate on validation set
-        acc1 = validate(val_loader, model, criterion, args)
+        acc1 = validate(val_loader, model, criterion, device, args)
 
         # remember best acc@1 and save checkpoint
         is_best = acc1 > best_acc1
@@ -239,7 +249,7 @@ def main_worker(gpu, args):
             )
 
 
-def train(train_loader, model, criterion, optimizer, epoch, args):
+def train(train_loader, model, criterion, optimizer, epoch, device, args):
     batch_time = AverageMeter("Time", ":6.3f")
     data_time = AverageMeter("Data", ":6.3f")
     losses = AverageMeter("Loss", ":.4e")
@@ -256,11 +266,12 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
 
     end = time.time()
     for i, (images, target) in enumerate(train_loader):
+
         # measure data loading time
         data_time.update(time.time() - end)
 
-        images = images.cuda(args.local_rank, non_blocking=True)
-        target = target.cuda(args.local_rank, non_blocking=True)
+        images = images.to(device)
+        target = target.to(device)
 
         # compute output
         output = model(images)
@@ -285,7 +296,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
             progress.display(i)
 
 
-def validate(val_loader, model, criterion, args):
+def validate(val_loader, model, criterion, device, args):
     batch_time = AverageMeter("Time", ":6.3f")
     losses = AverageMeter("Loss", ":.4e")
     top1 = AverageMeter("Acc@1", ":6.2f")
@@ -300,8 +311,8 @@ def validate(val_loader, model, criterion, args):
     with torch.no_grad():
         end = time.time()
         for i, (images, target) in enumerate(val_loader):
-            images = images.cuda(args.local_rank, non_blocking=True)
-            target = target.cuda(args.local_rank, non_blocking=True)
+            images = images.to(device)
+            target = target.to(device)
 
             # compute output
             output = model(images)
@@ -379,7 +390,7 @@ class FakeImageNetDataset(Dataset):
 
     def __getitem__(self, item):
         img = torch.rand(3, 224, 224)
-        label = random.randint(0, 1000)
+        label = random.randint(0, 999)
         return img, label
 
 
