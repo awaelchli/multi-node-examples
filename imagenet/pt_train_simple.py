@@ -272,8 +272,8 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         # measure data loading time
         data_time.update(time.time() - end)
 
-        images = images.to(device, non_blocking=True)
-        target = target.to(device, non_blocking=True)
+        images = images.to(device)
+        target = target.to(device)
 
         # compute output
         output = model(images)
