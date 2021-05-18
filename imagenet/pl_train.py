@@ -36,6 +36,7 @@ or show all options you can change:
 import os
 from argparse import ArgumentParser, Namespace
 
+import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
 import torch.nn.parallel
@@ -46,8 +47,6 @@ import torch.utils.data.distributed
 import torchvision.datasets as datasets
 import torchvision.models as models
 import torchvision.transforms as transforms
-
-import pytorch_lightning as pl
 from pl_examples import cli_lightning_logo
 from pytorch_lightning.core import LightningModule
 

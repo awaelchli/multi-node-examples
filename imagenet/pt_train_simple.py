@@ -16,17 +16,17 @@ import shutil
 import time
 
 import torch
-import torch.nn as nn
-import torch.nn.parallel
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist
+import torch.nn as nn
+import torch.nn.parallel
 import torch.optim
 import torch.utils.data
 import torch.utils.data.distributed
-import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
-from torch.utils.data import Dataset, DataLoader
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.distributed import DistributedSampler
 
 parser = argparse.ArgumentParser(description="PyTorch ImageNet Training")
@@ -81,7 +81,9 @@ parser.add_argument(
 parser.add_argument(
     "--pretrained", dest="pretrained", action="store_true", help="use pre-trained model"
 )
-parser.add_argument("--num-gpus", required=True, type=int, help="number of gpus per node")
+parser.add_argument(
+    "--num-gpus", required=True, type=int, help="number of gpus per node"
+)
 parser.add_argument(
     "--fake-data",
     default=False,
@@ -105,7 +107,9 @@ def main():
     args.world_size = int(os.environ["WORLD_SIZE"])
     args.local_rank = int(os.environ["LOCAL_RANK"])
     args.node_rank = int(os.environ["NODE_RANK"])
-    args.rank = int(os.environ.get("RANK", args.node_rank * args.num_gpus + args.local_rank))
+    args.rank = int(
+        os.environ.get("RANK", args.node_rank * args.num_gpus + args.local_rank)
+    )
 
     # For multiprocessing distributed training, rank needs to be the
     # global rank among all the processes
