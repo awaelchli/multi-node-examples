@@ -390,7 +390,7 @@ class FakeImageNetDataset(Dataset):
 
     def __getitem__(self, item):
         img = torch.rand(3, 224, 224)
-        label = random.randint(0, 1000)
+        label = torch.tensor(99, dtype=torch.long)
         return img, label
 
 
