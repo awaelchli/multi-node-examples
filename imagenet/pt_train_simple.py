@@ -263,14 +263,16 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
 
     # switch to train mode
     model.train()
+    device = torch.device("cuda", args.local_rank)
 
     end = time.time()
     for i, (images, target) in enumerate(train_loader):
+        print(i)
         # measure data loading time
         data_time.update(time.time() - end)
 
-        images = images.cuda(args.local_rank, non_blocking=True)
-        target = target.cuda(args.local_rank, non_blocking=True)
+        images = images.to(device, non_blocking=True)
+        target = target.to(device, non_blocking=True)
 
         # compute output
         output = model(images)
@@ -284,6 +286,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
+        print("backward")
         loss.backward()
         optimizer.step()
 
