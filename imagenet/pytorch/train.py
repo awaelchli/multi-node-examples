@@ -41,6 +41,7 @@ import torch.utils.data.distributed
 import torchvision.datasets as datasets
 import torchvision.models as models
 import torchvision.transforms as transforms
+from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
@@ -159,9 +160,7 @@ def main():
     # ourselves based on the total number of GPUs we have
     args.batch_size = int(args.batch_size / args.num_gpus)
     args.workers = int((args.workers + args.num_gpus - 1) / args.num_gpus)
-    model = torch.nn.parallel.DistributedDataParallel(
-        model, device_ids=[args.local_rank]
-    )
+    model = DistributedDataParallel(model, device_ids=[args.local_rank])
 
     # define loss function (criterion) and optimizer
     criterion = nn.CrossEntropyLoss()
