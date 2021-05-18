@@ -6,7 +6,6 @@ import os
 import random
 import shutil
 import time
-import warnings
 
 import torch
 import torch.nn as nn
@@ -20,7 +19,8 @@ import torch.utils.data.distributed
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
+from torch.utils.data.distributed import DistributedSampler
 
 parser = argparse.ArgumentParser(description="PyTorch ImageNet Training")
 parser.add_argument("--data", default=".", metavar="DIR", help="path to dataset")
@@ -123,8 +123,6 @@ def main_worker(gpu, args):
     dist.init_process_group(
         backend="nccl",
         init_method="env://",
-        world_size=args.world_size,
-        rank=args.rank,
     )
 
     print(
@@ -194,11 +192,10 @@ def main_worker(gpu, args):
             ),
         )
 
-    train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
-    train_loader = torch.utils.data.DataLoader(
+    train_sampler = DistributedSampler(train_dataset)
+    train_loader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,
-        shuffle=(train_sampler is None),
         num_workers=args.workers,
         pin_memory=True,
         sampler=train_sampler,
