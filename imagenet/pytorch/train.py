@@ -129,11 +129,9 @@ def main():
     os.environ.setdefault("NODE_RANK", "0")
 
     args.world_size = int(os.environ["WORLD_SIZE"])
-    args.local_rank = int(os.environ["LOCAL_RANK"])
+    args.global_rank = int(os.environ["RANK"])
     args.node_rank = int(os.environ["NODE_RANK"])
-    args.rank = int(
-        os.environ.get("RANK", args.node_rank * args.num_gpus + args.local_rank)
-    )
+    args.local_rank = int(os.environ["LOCAL_RANK"])
 
     print("Initializing process group. Waiting for all processes to join ...")
     dist.init_process_group(
@@ -143,7 +141,7 @@ def main():
 
     print(
         f"Using GPU {args.local_rank}, "
-        f"GLOBAL RANK {args.rank}/{args.world_size}, "
+        f"GLOBAL RANK {args.global_rank}/{args.world_size}, "
         f"LOCAL RANK {args.local_rank}/{args.num_gpus}"
     )
 
@@ -245,7 +243,7 @@ def main():
         is_best = acc1 > best_acc1
         best_acc1 = max(acc1, best_acc1)
 
-        if args.rank == 0:
+        if args.global_rank == 0:
             save_checkpoint(
                 {
                     "epoch": epoch + 1,
