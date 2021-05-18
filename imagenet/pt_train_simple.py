@@ -202,6 +202,7 @@ def main():
         num_workers=args.workers,
         pin_memory=True,
     )
+    print("dataloaders initialized")
 
     if args.evaluate:
         validate(val_loader, model, criterion, args)
