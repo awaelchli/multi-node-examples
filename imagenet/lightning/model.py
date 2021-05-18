@@ -9,7 +9,6 @@ from torchvision import models as models
 class ImageNetLightningModel(LightningModule):
     def __init__(
         self,
-        arch: str = "resnet18",
         pretrained: bool = False,
         lr: float = 0.1,
         momentum: float = 0.9,
@@ -18,7 +17,6 @@ class ImageNetLightningModel(LightningModule):
     ):
         super().__init__()
         self.save_hyperparameters()
-        self.arch = arch
         self.pretrained = pretrained
         self.lr = lr
         self.momentum = momentum
@@ -95,18 +93,6 @@ class ImageNetLightningModel(LightningModule):
     @staticmethod
     def add_model_specific_args(parent_parser):  # pragma: no-cover
         parser = parent_parser.add_argument_group("ImageNetLightningModel")
-        parser.add_argument(
-            "-a",
-            "--arch",
-            metavar="ARCH",
-            default="resnet18",
-            choices=ImageNetLightningModel.MODEL_NAMES,
-            help=(
-                "model architecture: "
-                + " | ".join(ImageNetLightningModel.MODEL_NAMES)
-                + " (default: resnet18)"
-            ),
-        )
         parser.add_argument(
             "-j",
             "--workers",
