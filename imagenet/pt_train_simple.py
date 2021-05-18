@@ -111,7 +111,7 @@ def main_worker(gpu, args):
     global best_acc1
     print(f"Use GPU: {gpu} for training")
 
-    args.local_rank = str(gpu)
+    args.local_rank = gpu
     args.rank = args.node_rank * args.gpus + gpu
 
     os.environ["LOCAL_RANK"] = str(args.local_rank)
@@ -134,17 +134,17 @@ def main_worker(gpu, args):
     # For multiprocessing distributed, DistributedDataParallel constructor
     # should always set the single device scope, otherwise,
     # DistributedDataParallel will use all available devices.
-    torch.cuda.set_device(gpu)
-    model.cuda(gpu)
+    torch.cuda.set_device(args.local_rank)
+    model.cuda(args.local_rank)
     # When using a single GPU per process and per
     # DistributedDataParallel, we need to divide the batch size
     # ourselves based on the total number of GPUs we have
     args.batch_size = int(args.batch_size / args.gpus)
     args.workers = int((args.workers + args.gpus - 1) / args.gpus)
-    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[gpu])
+    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank])
 
     # define loss function (criterion) and optimizer
-    criterion = nn.CrossEntropyLoss().cuda(gpu)
+    criterion = nn.CrossEntropyLoss().cuda(args.local_rank)
 
     optimizer = torch.optim.SGD(
         model.parameters(),
