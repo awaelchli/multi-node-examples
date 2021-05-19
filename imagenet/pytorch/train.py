@@ -44,7 +44,6 @@ import torchvision.transforms as transforms
 from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
-
 from utils import (
     AverageMeter,
     FakeImageNetDataset,
