@@ -34,10 +34,10 @@ or show all options you can change:
 
 """
 
+from pytorch_lightning.utilities.cli import LightningCLI
+
 from data import ImageNetDataModule
 from model import ImageNetLightningModel
-from pytorch_lightning.plugins.training_type.ddp import DDPPlugin
-from pytorch_lightning.utilities.cli import LightningCLI
 
 
 def main():
@@ -49,7 +49,6 @@ def main():
         trainer_defaults=dict(
             accelerator="ddp",
             max_epochs=90,
-            # plugins=[DDPPlugin(find_unused_parameters=False)],
         ),
     )
     # TODO: determine per-process batch size given total batch size
