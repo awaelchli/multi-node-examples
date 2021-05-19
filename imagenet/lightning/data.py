@@ -24,19 +24,20 @@ class ImageNetDataModule(LightningDataModule):
     def __init__(
         self,
         data_path: Optional[str] = None,
-        fake_data: bool = True,
         batch_size: int = 4,
         workers: int = 2,
         **kwargs,
     ):
         super().__init__()
         self.data_path = data_path
-        self.fake_data = fake_data
         self.batch_size = batch_size
         self.workers = workers
 
+        if self.data_path is None:
+            print("Argument --data_path was omitted. Will use random generated data instead.")
+
     def train_dataloader(self):
-        if self.fake_data:
+        if self.data_path is None:
             train_dataset = FakeImageNetDataset()
         else:
             train_dir = os.path.join(self.data_path, "train")
@@ -65,7 +66,7 @@ class ImageNetDataModule(LightningDataModule):
         return train_loader
 
     def val_dataloader(self):
-        if self.fake_data:
+        if self.data_path is None:
             val_dataset = FakeImageNetDataset()
         else:
             val_dir = os.path.join(self.data_path, "val")

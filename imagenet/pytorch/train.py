@@ -6,22 +6,22 @@ Example:
 Launching processes by hand on two nodes, two processes each:
 
 # first process, first node
-WORLD_SIZE=4 RANK=0 NODE_RANK=0 LOCAL_RANK=0 MASTER_ADDR=node01.cluster MASTER_PORT=1234 python train.py --num-gpus 2 --fake-data
+WORLD_SIZE=4 RANK=0 NODE_RANK=0 LOCAL_RANK=0 MASTER_ADDR=node01.cluster MASTER_PORT=1234 python train.py --num-gpus 2
 
 # second process, first node
-WORLD_SIZE=4 RANK=1 NODE_RANK=0 LOCAL_RANK=1 MASTER_ADDR=node01.cluster MASTER_PORT=1238 python train.py --num-gpus 2 --fake-data
+WORLD_SIZE=4 RANK=1 NODE_RANK=0 LOCAL_RANK=1 MASTER_ADDR=node01.cluster MASTER_PORT=1238 python train.py --num-gpus 2
 
 # third process, second node
-WORLD_SIZE=4 RANK=2 NODE_RANK=1 LOCAL_RANK=0 MASTER_ADDR=node01.cluster MASTER_PORT=1238 python train.py --num-gpus 2 --fake-data
+WORLD_SIZE=4 RANK=2 NODE_RANK=1 LOCAL_RANK=0 MASTER_ADDR=node01.cluster MASTER_PORT=1238 python train.py --num-gpus 2
 
 # fourth process, second node
-WORLD_SIZE=4 RANK=3 NODE_RANK=1 LOCAL_RANK=1 MASTER_ADDR=node01.cluster MASTER_PORT=1238 python train.py --num-gpus 2 --fake-data
+WORLD_SIZE=4 RANK=3 NODE_RANK=1 LOCAL_RANK=1 MASTER_ADDR=node01.cluster MASTER_PORT=1238 python train.py --num-gpus 2
 
 
 Example:
 Single node, two GPUs, launch with torch.distributed.launch:
 
-python -m torch.distributed.launch --nnodes 1  --nproc_per_node 2 --master_addr 127.0.0.1 --master_port 1234  --use_env train.py --num-gpus 2 --fake-data
+python -m torch.distributed.launch --nnodes 1  --nproc_per_node 2 --master_addr 127.0.0.1 --master_port 1234  --use_env train.py --num-gpus 2
 
 """
 
@@ -54,7 +54,7 @@ from utils import (
 )
 
 parser = argparse.ArgumentParser(description="PyTorch ImageNet Training")
-parser.add_argument("--data", default=".", metavar="DIR", help="path to dataset")
+parser.add_argument("--data", default=None, metavar="DIR", help="path to dataset")
 parser.add_argument(
     "-j",
     "--workers",
@@ -104,12 +104,6 @@ parser.add_argument(
 )
 parser.add_argument(
     "--pretrained", dest="pretrained", action="store_true", help="use pre-trained model"
-)
-parser.add_argument(
-    "--fake-data",
-    default=False,
-    action="store_true",
-    help="simulate fake data instead of using ImageNet",
 )
 
 
@@ -167,7 +161,8 @@ def main():
     )
 
     # Data loading code
-    if args.fake_data:
+    if args.data is None:
+        print("Argument --data was omitted. Will use random generated data instead.")
         train_dataset = FakeImageNetDataset()
         val_dataset = FakeImageNetDataset()
     else:

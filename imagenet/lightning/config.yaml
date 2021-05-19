@@ -65,7 +65,6 @@ model:
   weight_decay: 0.0001
 data:
   data_path: null
-  fake_data: true
   batch_size: 4
   workers: 2
   train_transforms: null
