@@ -5,7 +5,7 @@ from typing import Optional
 import torch
 import torchvision.transforms as transforms
 from pytorch_lightning import LightningDataModule
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 
 class FakeImageNetDataset(Dataset):
