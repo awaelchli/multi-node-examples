@@ -49,7 +49,7 @@ def main():
         trainer_defaults=dict(
             accelerator="ddp",
             max_epochs=90,
-            plugins=[DDPPlugin(find_unused_parameters=False)],
+            # plugins=[DDPPlugin(find_unused_parameters=False)],
         ),
     )
     # TODO: determine per-process batch size given total batch size
