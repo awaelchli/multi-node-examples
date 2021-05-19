@@ -24,86 +24,36 @@ Train on ImageNet with default parameters:
 
 .. code-block: bash
 
-    python imagenet.py --data-path /path/to/imagenet
+    python train.py --data-path /path/to/imagenet
 
 or show all options you can change:
 
 .. code-block: bash
 
-    python imagenet.py --help
+    python train.py --help
 
 """
 
-from argparse import ArgumentParser, Namespace
-
-import pytorch_lightning as pl
-
-from model import ImageNetLightningModel
 from data import ImageNetDataModule
+from model import ImageNetLightningModel
 from pytorch_lightning.utilities.cli import LightningCLI
 
 
-def main2():
+def main():
     cli = LightningCLI(
         description="PyTorch Lightning ImageNet Training",
         model_class=ImageNetLightningModel,
         datamodule_class=ImageNetDataModule,
-        seed_everything_default=1234,
+        seed_everything_default=123,
         trainer_defaults=dict(
             accelerator="ddp",
             max_epochs=90,
-        )
+        ),
     )
+    # TODO: determine per-process batch size given total batch size
+    # TODO: enable evaluate
     cli.trainer.fit(cli.model, datamodule=cli.datamodule)
 
 
-def main(args: Namespace) -> None:
-    if args.seed is not None:
-        pl.seed_everything(args.seed)
-
-    if args.accelerator == "ddp":
-        # When using a single GPU per process and per
-        # DistributedDataParallel, we need to divide the batch size
-        # ourselves based on the total number of GPUs we have
-        args.batch_size = int(args.batch_size / max(1, args.gpus))
-        args.workers = int(args.workers / max(1, args.gpus))
-
-    model = ImageNetLightningModel(**vars(args))
-    datamodule = ImageNetDataModule(**vars(args))
-    trainer = pl.Trainer.from_argparse_args(args)
-
-    if args.evaluate:
-        trainer.test(model, datamodule=datamodule)
-    else:
-        trainer.fit(model, datamodule=datamodule)
-
-
-def run_cli():
-    parent_parser = ArgumentParser(add_help=False)
-    parent_parser = pl.Trainer.add_argparse_args(parent_parser)
-    parent_parser.add_argument(
-        "--data-path", metavar="DIR", type=str, help="path to dataset"
-    )
-    parent_parser.add_argument(
-        "-e",
-        "--evaluate",
-        dest="evaluate",
-        action="store_true",
-        help="evaluate model on validation set",
-    )
-    parent_parser.add_argument(
-        "--seed", type=int, default=42, help="seed for initializing training."
-    )
-    parser = ImageNetLightningModel.add_model_specific_args(parent_parser)
-    parser.set_defaults(
-        accelerator="ddp",
-        profiler="simple",
-        max_epochs=90,
-    )
-    args = parser.parse_args()
-    main(args)
-
-
 if __name__ == "__main__":
-    main2()
-    # run_cli()
+    main()
