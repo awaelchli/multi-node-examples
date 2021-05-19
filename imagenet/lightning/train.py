@@ -40,6 +40,21 @@ import pytorch_lightning as pl
 
 from model import ImageNetLightningModel
 from data import ImageNetDataModule
+from pytorch_lightning.utilities.cli import LightningCLI
+
+
+def main2(_):
+    cli = LightningCLI(
+        description="PyTorch Lightning ImageNet Training",
+        model_class=ImageNetLightningModel,
+        datamodule_class=ImageNetDataModule,
+        seed_everything_default=1234,
+        trainer_defaults=dict(
+            accelerator="ddp",
+            max_epochs=90,
+        )
+    )
+    cli.trainer.fit(cli.model, datamodule=cli.datamodule)
 
 
 def main(args: Namespace) -> None:
@@ -86,7 +101,7 @@ def run_cli():
         max_epochs=90,
     )
     args = parser.parse_args()
-    main(args)
+    main2(args)
 
 
 if __name__ == "__main__":
