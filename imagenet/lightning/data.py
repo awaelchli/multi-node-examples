@@ -4,6 +4,8 @@ from typing import Optional
 
 import torch
 import torchvision.transforms as transforms
+from torchvision.datasets import ImageFolder
+
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
 
@@ -42,7 +44,7 @@ class ImageNetDataModule(LightningDataModule):
                 mean=[0.485, 0.456, 0.406],
                 std=[0.229, 0.224, 0.225],
             )
-            train_dataset = datasets.ImageFolder(
+            train_dataset = ImageFolder(
                 train_dir,
                 transforms.Compose(
                     [
@@ -72,7 +74,7 @@ class ImageNetDataModule(LightningDataModule):
                 std=[0.229, 0.224, 0.225],
             )
             val_dataset = (
-                datasets.ImageFolder(
+                ImageFolder(
                     val_dir,
                     transforms.Compose(
                         [
