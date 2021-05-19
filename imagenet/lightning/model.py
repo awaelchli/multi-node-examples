@@ -1,8 +1,10 @@
 import torch
+from torch.optim.lr_scheduler import LambdaLR
+
 from pytorch_lightning import LightningModule
-from torch import optim as optim
 from torch.nn import functional as F
-from torch.optim import lr_scheduler as lr_scheduler
+from torch.optim import SGD
+
 from torchvision import models as models
 
 
@@ -65,13 +67,13 @@ class ImageNetLightningModel(LightningModule):
             return res
 
     def configure_optimizers(self):
-        optimizer = optim.SGD(
+        optimizer = SGD(
             self.parameters(),
             lr=self.lr,
             momentum=self.momentum,
             weight_decay=self.weight_decay,
         )
-        scheduler = lr_scheduler.LambdaLR(optimizer, lambda epoch: 0.1 ** (epoch // 30))
+        scheduler = LambdaLR(optimizer, lambda epoch: 0.1 ** (epoch // 30))
         return [optimizer], [scheduler]
 
     def test_step(self, *args, **kwargs):

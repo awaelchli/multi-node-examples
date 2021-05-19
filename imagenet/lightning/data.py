@@ -3,13 +3,9 @@ import random
 from typing import Optional
 
 import torch
-import torch.nn.parallel
-import torch.utils.data
-import torch.utils.data.distributed
-import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 from pytorch_lightning import LightningDataModule
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 
 
 class FakeImageNetDataset(Dataset):
@@ -40,7 +36,6 @@ class ImageNetDataModule(LightningDataModule):
     def train_dataloader(self):
         if self.fake_data:
             train_dataset = FakeImageNetDataset()
-
         else:
             train_dir = os.path.join(self.data_path, "train")
             normalize = transforms.Normalize(
@@ -59,7 +54,7 @@ class ImageNetDataModule(LightningDataModule):
                 ),
             )
 
-        train_loader = torch.utils.data.DataLoader(
+        train_loader = DataLoader(
             dataset=train_dataset,
             batch_size=self.batch_size,
             shuffle=True,
@@ -90,7 +85,7 @@ class ImageNetDataModule(LightningDataModule):
                 ),
             )
 
-        val_loader = torch.utils.data.DataLoader(
+        val_loader = DataLoader(
             val_dataset,
             batch_size=self.batch_size,
             shuffle=False,
