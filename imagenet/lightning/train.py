@@ -43,7 +43,7 @@ from data import ImageNetDataModule
 from pytorch_lightning.utilities.cli import LightningCLI
 
 
-def main2(_):
+def main2():
     cli = LightningCLI(
         description="PyTorch Lightning ImageNet Training",
         model_class=ImageNetLightningModel,
@@ -101,8 +101,9 @@ def run_cli():
         max_epochs=90,
     )
     args = parser.parse_args()
-    main2(args)
+    main(args)
 
 
 if __name__ == "__main__":
-    run_cli()
+    main2()
+    # run_cli()
