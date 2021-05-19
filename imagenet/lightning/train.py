@@ -36,7 +36,7 @@ or show all options you can change:
 
 from data import ImageNetDataModule
 from model import ImageNetLightningModel
-from pytorch_lightning.plugins import DDPPlugin
+from pytorch_lightning.plugins.training_type.ddp import DDPPlugin
 from pytorch_lightning.utilities.cli import LightningCLI
 
 
