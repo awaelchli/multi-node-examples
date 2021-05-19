@@ -49,7 +49,7 @@ trainer:
   auto_scale_batch_size: false
   prepare_data_per_node: true
   plugins:
-    - class_path: pytorch_lightning.plugins.DDPPlugin
+    - class_path: pytorch_lightning.plugins.training_type.ddp.DDPPlugin
       init_args:
         find_unused_parameters: false
   amp_backend: native
