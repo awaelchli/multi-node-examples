@@ -33,27 +33,23 @@ or show all options you can change:
     python train.py --help
 
 """
+from argparse import ArgumentParser
 
-from pytorch_lightning.utilities.cli import LightningCLI
+from pytorch_lightning import Trainer
 
 from data import ImageNetDataModule
 from model import ImageNetLightningModel
 
 
 def main():
-    cli = LightningCLI(
-        description="PyTorch Lightning ImageNet Training",
-        model_class=ImageNetLightningModel,
-        datamodule_class=ImageNetDataModule,
-        seed_everything_default=123,
-        trainer_defaults=dict(
-            accelerator="ddp",
-            max_epochs=90,
-        ),
-    )
-    # TODO: determine per-process batch size given total batch size
-    # TODO: enable evaluate
-    cli.trainer.fit(cli.model, datamodule=cli.datamodule)
+
+    parser = ArgumentParser()
+    parser = Trainer.add_argparse_args(parser)
+    trainer = Trainer.from_argparse_args(parser.parse_args(), accelerator="ddp", max_epochs=90)
+
+    model = ImageNetLightningModel()
+    datamodule = ImageNetDataModule()
+    trainer.fit(model, datamodule=datamodule)
 
 
 if __name__ == "__main__":
