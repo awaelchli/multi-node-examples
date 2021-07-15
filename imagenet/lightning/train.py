@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
+r"""
 This example is largely adapted from the PyTorch official examples repository
 https://github.com/pytorch/examples/blob/master/imagenet/main.py and
 and from the PyTorch Lightning Examples
@@ -24,7 +24,7 @@ Train on ImageNet with default parameters:
 
 .. code-block: bash
 
-    python train.py --data-path /path/to/imagenet
+    python train.py --data.data-path /path/to/imagenet
 
 or show all options you can change:
 
@@ -32,6 +32,17 @@ or show all options you can change:
 
     python train.py --help
 
+Here is an example how to run on two nodes, 2 GPUs each:
+
+.. code-block: bash
+
+    # first node, Lightning launches two processes
+    MASTER_ADDR=node01.cluster MASTER_PORT=1234 NODE_RANK=0 python train.py --trainer.gpus 2 --trainer.num_nodes 2 \
+        --data.data-path ...
+
+    # second node, Lightning launches two processes
+    MASTER_ADDR=node02.cluster MASTER_PORT=1234 NODE_RANK=1 python train.py --trainer.gpus 2 --trainer.num_nodes 2 \
+        --data.data-path ...
 """
 
 from pytorch_lightning.utilities.cli import LightningCLI
